@@ -1,126 +1,191 @@
-import React from 'react';
-import { AbsoluteFill, Sequence, spring, useCurrentFrame, useVideoConfig, interpolate } from 'remotion';
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>黄金波段法则演示</title>
+  
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 
-export const GoldTradingVisuals: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background-color: #05070A; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="root" style="width: 100%;"></div>
 
-  // 1. 背景呼吸发光效果
-  const glowOpacity = interpolate(frame, [0, 180, 360], [0.1, 0.4, 0.1], { extrapolateRight: 'clamp' });
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
 
-  // 2. 动态画线动画（模拟黄金走势）
-  const pathLength = spring({
-    frame: frame - 20,
-    fps,
-    config: { damping: 200, mass: 2 },
-    from: 0,
-    to: 1000,
-  });
+    // 1. 模拟 Remotion 的缓动与插值计算引擎
+    const easeOutQuart = t => 1 - (--t) * t * t * t;
+    const interpolateValue = (frame, startFrame, duration, from, to) => {
+      if (frame <= startFrame) return from;
+      if (frame >= startFrame + duration) return to;
+      const progress = (frame - startFrame) / duration;
+      return from + (to - from) * easeOutQuart(progress);
+    };
 
-  // 3. 运镜缩放：从微观（分钟级）拉升到宏观（日线级别）
-  const cameraZoom = interpolate(frame, [150, 210], [1.5, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-  const cameraY = interpolate(frame, [150, 210], [200, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+    function GoldTradingVisuals() {
+      // 2. 模拟 useCurrentFrame() - 设定总帧数 360帧 (30fps下等于12秒)
+      const [frame, setFrame] = useState(0);
 
-  return (
-    <AbsoluteFill style={{ backgroundColor: '#0B0F19', color: '#fff', overflow: 'hidden' }}>
-      
-      {/* 动态网格与环境光 */}
-      <div style={{
-        position: 'absolute',
-        width: '100%', height: '100%',
-        backgroundImage: 'linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px)',
-        backgroundSize: '50px 50px',
-        opacity: 0.5
-      }} />
-      <div style={{
-        position: 'absolute', top: '20%', left: '30%', width: '800px', height: '800px',
-        background: 'radial-gradient(circle, rgba(255,215,0,0.15) 0%, rgba(0,0,0,0) 70%)',
-        opacity: glowOpacity
-      }} />
+      useEffect(() => {
+        // 每 33.3 毫秒推进一帧 (约等于 30fps)
+        const timer = setInterval(() => {
+          setFrame(prev => (prev >= 360 ? 0 : prev + 1));
+        }, 1000 / 30);
+        return () => clearInterval(timer);
+      }, []);
 
-      {/* 画面主体：带运镜的图表区 */}
-      <div style={{ transform: `scale(${cameraZoom}) translateY(${cameraY}px)`, transformOrigin: 'center center', width: '100%', height: '100%' }}>
-        
-        {/* SVG 发光趋势线 */}
-        <Sequence from={20}>
-          <svg width="1920" height="1080" style={{ position: 'absolute', top: 100, left: 0 }}>
-            <path
-              d="M 100 800 Q 400 700 600 600 T 1100 400 T 1700 200"
-              fill="transparent"
-              stroke="url(#goldGradient)"
-              strokeWidth="12"
-              strokeDasharray={1000}
-              strokeDashoffset={1000 - pathLength}
-              style={{ filter: 'drop-shadow(0px 0px 15px rgba(255, 215, 0, 0.8))' }}
-            />
-            <defs>
-              <linearGradient id="goldGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#B8860B" />
-                <stop offset="50%" stopColor="#FFD700" />
-                <stop offset="100%" stopColor="#FFF8DC" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </Sequence>
+      // 3. 翻译 Remotion 的动画变量
+      // 背景呼吸发光
+      let glowOpacity = 0.1;
+      if (frame <= 180) glowOpacity = 0.1 + (frame / 180) * 0.3;
+      else glowOpacity = 0.4 - ((frame - 180) / 180) * 0.3;
 
-        {/* 动态K线柱状图 (抽象化表现) */}
-        <Sequence from={40}>
-          {[...Array(8)].map((_, i) => {
-            const barHeight = spring({ frame: frame - (40 + i * 10), fps, from: 0, to: 100 + Math.random() * 200 });
-            return (
-              <div key={i} style={{
-                position: 'absolute',
-                bottom: 280 + i * 50, left: 200 + i * 180,
-                width: '30px', height: `${barHeight}px`,
-                backgroundColor: i % 3 === 0 ? '#FF3B30' : '#34C759', // 红绿K线
-                boxShadow: `0 0 20px ${i % 3 === 0 ? 'rgba(255,59,48,0.4)' : 'rgba(52,199,89,0.4)'}`,
-                borderRadius: '4px'
-              }}>
-                {/* K线上下的引线 */}
-                <div style={{ position: 'absolute', top: '-30px', left: '13px', width: '4px', height: '100%', backgroundColor: 'inherit', paddingBottom: '60px' }} />
-              </div>
-            );
-          })}
-        </Sequence>
-      </div>
+      // 动态画线 (第 20 帧开始，持续 60 帧)
+      const pathLength = interpolateValue(frame, 20, 60, 0, 1000);
 
-      {/* 电影级文字排版与画面配合 */}
-      <Sequence from={140}>
-        <div style={{
-          position: 'absolute', top: '150px', left: '150px',
-          fontFamily: 'system-ui, sans-serif', textShadow: '0 4px 20px rgba(0,0,0,0.8)'
+      // 运镜缩放 (第 150 帧开始，持续 60 帧，模拟 [150, 210])
+      const cameraZoom = interpolateValue(frame, 150, 60, 1.5, 1);
+      const cameraY = interpolateValue(frame, 150, 60, 200, 0);
+
+      // 固化 K 线高度（替代原生代码中的 Math.random()，避免 React 每帧重新随机闪烁）
+      const kLineHeights = useMemo(() => [150, 280, 120, 240, 190, 290, 160, 210], []);
+
+      // 4. 响应式缩放：将 1920x1080 的画布等比缩放适应当前屏幕
+      const [scale, setScale] = useState(1);
+      useEffect(() => {
+        const handleResize = () => {
+           // 留出一点边距，最大宽度不超过屏幕
+           const availableWidth = Math.min(window.innerWidth - 40, 1280);
+           setScale(availableWidth / 1920);
+        };
+        window.addEventListener('resize', handleResize);
+        handleResize();
+        return () => window.removeEventListener('resize', handleResize);
+      }, []);
+
+      return (
+        <div style={{ 
+          width: `${1920 * scale}px`, height: `${1080 * scale}px`, 
+          margin: '0 auto', overflow: 'hidden', 
+          position: 'relative', borderRadius: '12px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
         }}>
-          <h1 style={{ fontSize: '100px', margin: 0, color: '#FFD700', letterSpacing: '5px' }}>
-            日线波段法则
-          </h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '40px' }}>
+          {/* 这里是 1920x1080 的主画布 */}
+          <div style={{
+            width: '1920px', height: '1080px', 
+            transform: `scale(${scale})`, transformOrigin: 'top left',
+            position: 'absolute', top: 0, left: 0,
+            backgroundColor: '#0B0F19', color: '#fff'
+          }}>
             
-            {/* 随着运镜拉远，展现大级别格局 */}
-            <Sequence from={180}>
-              <div style={{ display: 'flex', alignItems: 'center', fontSize: '50px', fontWeight: 'bold' }}>
-                <span style={{ width: '20px', height: '20px', backgroundColor: '#34C759', borderRadius: '50%', marginRight: '20px', boxShadow: '0 0 15px #34C759' }} />
-                <span>锚定 1小时以上级别 K线收盘</span>
-              </div>
-            </Sequence>
+            {/* --- 以下基本保留你原有的 UI 布局设计 --- */}
+            
+            {/* 动态网格与环境光 */}
+            <div style={{
+              position: 'absolute', width: '100%', height: '100%',
+              backgroundImage: 'linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px)',
+              backgroundSize: '50px 50px', opacity: 0.5
+            }} />
+            <div style={{
+              position: 'absolute', top: '20%', left: '30%', width: '800px', height: '800px',
+              background: 'radial-gradient(circle, rgba(255,215,0,0.15) 0%, rgba(0,0,0,0) 70%)',
+              opacity: glowOpacity
+            }} />
 
-            {/* 强调噪音过滤 */}
-            <Sequence from={220}>
-              <div style={{ display: 'flex', alignItems: 'center', fontSize: '45px', color: '#A0AABF' }}>
-                <span style={{ width: '20px', height: '20px', backgroundColor: '#FF3B30', borderRadius: '50%', marginRight: '20px' }} />
-                <span style={{ textDecoration: 'line-through' }}>坚决过滤分钟级噪音干扰</span>
-              </div>
-            </Sequence>
+            {/* 画面主体：带运镜的图表区 */}
+            <div style={{ transform: `scale(${cameraZoom}) translateY(${cameraY}px)`, transformOrigin: 'center center', width: '100%', height: '100%', position: 'absolute' }}>
+              
+              {/* SVG 发光趋势线 */}
+              {frame >= 20 && (
+                <svg width="1920" height="1080" style={{ position: 'absolute', top: 100, left: 0 }}>
+                  <path
+                    d="M 100 800 Q 400 700 600 600 T 1100 400 T 1700 200"
+                    fill="transparent" stroke="url(#goldGradient)" strokeWidth="12"
+                    strokeDasharray="1000" strokeDashoffset={1000 - pathLength}
+                    style={{ filter: 'drop-shadow(0px 0px 15px rgba(255, 215, 0, 0.8))' }}
+                  />
+                  <defs>
+                    <linearGradient id="goldGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#B8860B" />
+                      <stop offset="50%" stopColor="#FFD700" />
+                      <stop offset="100%" stopColor="#FFF8DC" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              )}
 
+              {/* 动态 K 线柱状图 */}
+              {frame >= 40 && kLineHeights.map((h, i) => {
+                const barHeight = interpolateValue(frame, 40 + i * 10, 40, 0, h);
+                return (
+                  <div key={i} style={{
+                    position: 'absolute',
+                    bottom: 280 + i * 50, left: 200 + i * 180,
+                    width: '30px', height: `${barHeight}px`,
+                    backgroundColor: i % 3 === 0 ? '#FF3B30' : '#34C759',
+                    boxShadow: `0 0 20px ${i % 3 === 0 ? 'rgba(255,59,48,0.4)' : 'rgba(52,199,89,0.4)'}`,
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{ position: 'absolute', top: '-30px', left: '13px', width: '4px', height: '100%', backgroundColor: 'inherit', paddingBottom: '60px' }} />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 电影级文字排版与画面配合 */}
+            {frame >= 140 && (
+              <div style={{
+                position: 'absolute', top: '150px', left: '150px',
+                textShadow: '0 4px 20px rgba(0,0,0,0.8)'
+              }}>
+                <h1 style={{ fontSize: '100px', margin: 0, color: '#FFD700', letterSpacing: '5px' }}>
+                  日线波段法则
+                </h1>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '40px' }}>
+                  
+                  {frame >= 180 && (
+                    <div style={{ display: 'flex', alignItems: 'center', fontSize: '50px', fontWeight: 'bold' }}>
+                      <span style={{ width: '20px', height: '20px', backgroundColor: '#34C759', borderRadius: '50%', marginRight: '20px', boxShadow: '0 0 15px #34C759' }} />
+                      <span>锚定 1小时以上级别 K线收盘</span>
+                    </div>
+                  )}
+
+                  {frame >= 220 && (
+                    <div style={{ display: 'flex', alignItems: 'center', fontSize: '45px', color: '#A0AABF' }}>
+                      <span style={{ width: '20px', height: '20px', backgroundColor: '#FF3B30', borderRadius: '50%', marginRight: '20px' }} />
+                      <span style={{ textDecoration: 'line-through' }}>坚决忽略分钟级噪音干扰</span>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            )}
+            
+            {/* 底部播放进度条指示器 */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, height: '6px', backgroundColor: '#FFD700', width: `${(frame / 360) * 100}%`, transition: 'width 0.1s linear' }} />
+            
           </div>
         </div>
-      </Sequence>
+      );
+    }
 
-    </AbsoluteFill>
-  );
-};
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<GoldTradingVisuals />);
+  </script>
+</body>
+</html>
