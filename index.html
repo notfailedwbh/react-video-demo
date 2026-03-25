@@ -3,81 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>黄金的特殊存在 - 视觉大片</title>
+  <title>黄金：跨越万年的特殊存在</title>
   
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 
   <style>
-    body { margin: 0; padding: 0; background-color: #030407; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, sans-serif; overflow: hidden; }
+    :root { --gold: #FFD700; --gold-dark: #B8860B; --bg: #050505; }
+    body { margin: 0; padding: 0; background-color: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, sans-serif; overflow: hidden; color: white; }
     
-    /* 核心发光体动画 */
-    @keyframes pulseGlow {
-      0% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.2), 0 0 80px rgba(255, 215, 0, 0.1); }
-      50% { box-shadow: 0 0 80px rgba(255, 215, 0, 0.5), 0 0 150px rgba(255, 140, 0, 0.3); }
-      100% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.2), 0 0 80px rgba(255, 215, 0, 0.1); }
-    }
-
-    /* 背景风暴波动 */
-    @keyframes stormBg {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 100% 100%; }
-    }
-
-    /* 元素的漂浮感 */
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-15px); }
-      100% { transform: translateY(0px); }
-    }
-
-    /* 电路板流动光效 */
-    @keyframes circuitFlow {
-      0% { stroke-dashoffset: 1000; }
-      100% { stroke-dashoffset: 0; }
-    }
-
-    .keyword {
-      position: absolute;
-      color: rgba(255, 215, 0, 0.8);
-      font-size: 24px;
-      letter-spacing: 8px;
-      font-weight: 300;
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-    }
+    /* 核心动画库 */
+    @keyframes spin { 100% { transform: rotateY(360deg) rotateX(360deg); } }
+    @keyframes pulse-ring { 0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 30px rgba(255, 215, 0, 0); } 100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); } }
+    @keyframes draw-line { to { stroke-dashoffset: 0; } }
+    @keyframes noise-wave { 0% { d: path("M0,100 Q50,150 100,100 T200,100 T300,100"); } 25% { d: path("M0,100 Q50,0 100,200 T200,50 T300,250"); } 50% { d: path("M0,100 Q50,250 100,0 T200,200 T300,0"); } 75% { d: path("M0,100 Q50,50 100,150 T200,0 T300,150"); } 100% { d: path("M0,100 Q50,150 100,100 T200,100 T300,100"); } }
+    
+    /* 立方体 3D 样式 */
+    .cube-container { perspective: 1000px; }
+    .cube { width: 200px; height: 200px; position: relative; transform-style: preserve-3d; animation: spin 20s infinite linear; }
+    .face { position: absolute; width: 200px; height: 200px; border: 2px solid var(--gold); background: rgba(255, 215, 0, 0.1); box-shadow: inset 0 0 50px rgba(255, 215, 0, 0.2); }
+    .front  { transform: translateZ(100px); } .back { transform: rotateY(180deg) translateZ(100px); }
+    .right  { transform: rotateY(90deg) translateZ(100px); } .left { transform: rotateY(-90deg) translateZ(100px); }
+    .top    { transform: rotateX(90deg) translateZ(100px); } .bottom { transform: rotateX(-90deg) translateZ(100px); }
   </style>
 </head>
 <body>
   <div id="root" style="width: 100%;"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useMemo } = React;
 
-    // 缓动函数：让动画看起来更顺滑自然，不是生硬的匀速
-    const easeInOutCubic = t => t < .5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
-    
-    // 核心插值计算引擎
-    const interpolate = (frame, start, duration, from, to) => {
-      if (frame <= start) return from;
-      if (frame >= start + duration) return to;
-      const progress = (frame - start) / duration;
-      return from + (to - from) * easeInOutCubic(progress);
-    };
+    // 平滑插值函数 (缓动)
+    const smoothStep = (min, max, value) => Math.max(0, Math.min(1, (value - min) / (max - min)));
+    const easeOutExp = t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
 
-    function GoldEpicVisuals() {
-      // 设定总时长为 24 秒 (720帧) 来配合这段口播
-      const totalFrames = 720; 
+    function MasterpieceVisuals() {
+      // 视频总时长控制器 (演示用 1500 帧，约 50 秒。实际使用时可调大以匹配口播长度)
+      const TOTAL_FRAMES = 1500; 
       const [frame, setFrame] = useState(0);
 
       useEffect(() => {
         const timer = setInterval(() => {
-          setFrame(prev => (prev >= totalFrames ? 0 : prev + 1));
-        }, 1000 / 30); // 30 FPS
+          setFrame(f => (f >= TOTAL_FRAMES ? 0 : f + 1));
+        }, 1000 / 30);
         return () => clearInterval(timer);
       }, []);
 
-      // 响应式自适应屏幕
+      // 屏幕自适应
       const [scale, setScale] = useState(1);
       useEffect(() => {
         const handleResize = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
@@ -86,174 +59,147 @@
         return () => window.removeEventListener('resize', handleResize);
       }, []);
 
-      // ====== 运镜与全局变量计算 ======
-      
-      // 第1幕 (0-90帧, 0-3秒): 特殊的存在 (黑洞中诞生的金球)
-      const scene1Opacity = interpolate(frame, 60, 30, 1, 0);
-      const coreScale = interpolate(frame, 0, 90, 0.1, 1);
-      
-      // 第2幕 (90-210帧, 3-7秒): 六千年前下葬 (金字塔/图腾)
-      const scene2Opacity = interpolate(frame, 90, 30, 0, 1) - interpolate(frame, 180, 30, 0, 1);
-      const pyramidY = interpolate(frame, 90, 120, 100, -50);
-
-      // 第3幕 (210-360帧, 7-12秒): 金融体系绑定 (网络节点)
-      const scene3Opacity = interpolate(frame, 210, 30, 0, 1) - interpolate(frame, 330, 30, 0, 1);
-      const networkSpread = interpolate(frame, 210, 60, 0, 400);
-
-      // 第4幕 (360-540帧, 12-18秒): 万物皆可金 (投资、首饰、电路、镶牙矩阵)
-      const scene4Opacity = interpolate(frame, 360, 30, 0, 1) - interpolate(frame, 510, 30, 0, 1);
-      const gridZoom = interpolate(frame, 360, 180, 0.8, 1.2);
-
-      // 第5幕 (540-720帧, 18-24秒): 风吹草动，避险本能 (万物归宗)
-      const scene5Opacity = interpolate(frame, 540, 30, 0, 1);
-      const stormIntensity = interpolate(frame, 540, 60, 0, 1);
-      
-      // 核心金球的全局位置 (后期会移动到正中心)
-      const coreY = interpolate(frame, 360, 60, 0, -200) + interpolate(frame, 540, 60, 0, 200);
+      // ====== 章节时间轴映射 (返回 0 到 1 的进度) ======
+      // 1. 引言与万能属性 (0-200帧)
+      const introProgress = smoothStep(0, 150, frame) - smoothStep(180, 200, frame);
+      // 2. 极度稀缺 22m立方体 (200-450帧)
+      const scarcityProgress = smoothStep(200, 250, frame) - smoothStep(400, 450, frame);
+      // 3. 供给之王南非 (450-700帧)
+      const supplyProgress = smoothStep(450, 500, frame) - smoothStep(650, 700, frame);
+      // 4. 三大交易中心枢纽 (700-1000帧)
+      const tradingProgress = smoothStep(700, 750, frame) - smoothStep(950, 1000, frame);
+      // 5. 巨大噪音：爱与投机 (1000-1300帧)
+      const noiseProgress = smoothStep(1000, 1050, frame) - smoothStep(1250, 1300, frame);
+      // 6. 最后的戒律 (1300-1500帧)
+      const rulesProgress = smoothStep(1300, 1350, frame);
 
       return (
-        <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#030407', position: 'relative' }}>
-          
-          {/* 画布缩放容器 */}
+        <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
           <div style={{
             width: '1920px', height: '1080px', transform: `scale(${scale})`, transformOrigin: 'top left',
             position: 'absolute', top: '50%', left: '50%', marginLeft: '-960px', marginTop: '-540px'
           }}>
 
-            {/* ====== 贯穿全局的视觉核心：黄金本体 (The Core) ====== */}
+            {/* 背景动态深空网格 */}
             <div style={{
-              position: 'absolute', top: '50%', left: '50%',
-              width: '120px', height: '120px',
-              marginLeft: '-60px', marginTop: '-60px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle at 30% 30%, #FFFDE7, #FFD700 40%, #B8860B 80%, #3B2A05 100%)',
-              transform: `scale(${coreScale}) translateY(${coreY}px)`,
-              animation: 'pulseGlow 4s infinite ease-in-out',
-              zIndex: 10
+              position: 'absolute', width: '200%', height: '200%', top: '-50%', left: '-50%',
+              backgroundImage: 'linear-gradient(rgba(255, 215, 0, 0.03) 2px, transparent 2px), linear-gradient(90deg, rgba(255, 215, 0, 0.03) 2px, transparent 2px)',
+              backgroundSize: '100px 100px', transform: `rotateX(60deg) translateY(${frame % 100}px)`, perspective: '1000px', opacity: 0.5
             }} />
 
-            {/* ====== 第1幕：引言 (0 - 3s) ====== */}
-            <div style={{ opacity: scene1Opacity, position: 'absolute', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-               <div style={{
-                 width: '600px', height: '600px', border: '1px solid rgba(255,215,0,0.1)', borderRadius: '50%',
-                 position: 'absolute', transform: `scale(${interpolate(frame, 0, 90, 0.5, 2)})`, opacity: interpolate(frame, 60, 30, 1, 0)
-               }} />
-               <h2 className="keyword" style={{ top: '65%' }}>绝对特殊的跨时代存在</h2>
-            </div>
-
-            {/* ====== 第2幕：古老文明 (3 - 7s) ====== */}
-            <div style={{ opacity: scene2Opacity, position: 'absolute', width: '100%', height: '100%', zIndex: 5 }}>
-              <svg width="1920" height="1080">
-                {/* 抽象金字塔/远古图腾线条 */}
-                <polygon points={`960,${400 + pyramidY} 760,${700 + pyramidY} 1160,${700 + pyramidY}`} 
-                         fill="none" stroke="rgba(255, 215, 0, 0.4)" strokeWidth="4" 
-                         style={{ filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.5))' }}/>
-                {/* 悬浮的远古尘埃 */}
-                <circle cx="960" cy={500 + pyramidY} r={interpolate(frame, 90, 90, 0, 150)} fill="none" stroke="rgba(255,215,0,0.1)" strokeWidth="2" />
-              </svg>
-              <h2 className="keyword" style={{ top: '75%', left: '50%', transform: 'translateX(-50%)' }}>六千年前的生死相伴</h2>
-            </div>
-
-            {/* ====== 第3幕：现代金融绑定 (7 - 12s) ====== */}
-            <div style={{ opacity: scene3Opacity, position: 'absolute', width: '100%', height: '100%' }}>
-              <svg width="1920" height="1080">
-                {/* 链接全球金融的动态网格 */}
-                {[0, 120, 240].map((angle, i) => {
-                  const rad = (angle * Math.PI) / 180;
-                  const endX = 960 + Math.cos(rad) * networkSpread;
-                  const endY = 540 + Math.sin(rad) * networkSpread;
-                  return (
-                    <g key={i}>
-                      {/* 连接线 */}
-                      <line x1="960" y1="540" x2={endX} y2={endY} stroke="rgba(255,215,0,0.6)" strokeWidth="3" 
-                            strokeDasharray="10 10" style={{ animation: 'circuitFlow 20s linear infinite' }} />
-                      {/* 货币节点 */}
-                      <circle cx={endX} cy={endY} r="40" fill="#111" stroke="#FFD700" strokeWidth="3" style={{ filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.8))' }} />
-                      <text x={endX} y={endY + 12} fill="#FFD700" fontSize="30" textAnchor="middle" fontWeight="bold">
-                        {['$', '€', '¥'][i]}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-              <h2 className="keyword" style={{ top: '20%', left: '50%', transform: 'translateX(-50%)' }}>全球金融的底层锚定</h2>
-            </div>
-
-            {/* ====== 第4幕：多维应用 (12 - 18s) ====== */}
-            <div style={{ opacity: scene4Opacity, position: 'absolute', width: '100%', height: '100%', transform: `scale(${gridZoom})`, transformOrigin: 'center 60%' }}>
-              {/* 四个方向的应用场景展示，带有未来科技感 */}
-              <div style={{ position: 'absolute', top: '55%', left: '50%', transform: 'translate(-50%, -50%)', width: '800px', height: '400px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                
-                {/* 投资 */}
-                <div style={{ textAlign: 'center', opacity: interpolate(frame, 370, 20, 0, 1), transform: `translateY(${interpolate(frame, 370, 20, 50, 0)}px)` }}>
-                  <div style={{ width: '100px', height: '100px', border: '2px solid #FFD700', borderRadius: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', background: 'rgba(255,215,0,0.1)' }}>📈</div>
-                  <p style={{ color: '#fff', marginTop: '15px', letterSpacing: '4px' }}>投资储蓄</p>
-                </div>
-
-                {/* 首饰 */}
-                <div style={{ textAlign: 'center', opacity: interpolate(frame, 390, 20, 0, 1), transform: `translateY(${interpolate(frame, 390, 20, 50, 0)}px)` }}>
-                  <div style={{ width: '100px', height: '100px', border: '2px solid #FFD700', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', background: 'rgba(255,215,0,0.1)' }}>💍</div>
-                  <p style={{ color: '#fff', marginTop: '15px', letterSpacing: '4px' }}>婚恋首饰</p>
-                </div>
-
-                {/* 电路板 */}
-                <div style={{ textAlign: 'center', opacity: interpolate(frame, 410, 20, 0, 1), transform: `translateY(${interpolate(frame, 410, 20, 50, 0)}px)` }}>
-                  <div style={{ width: '100px', height: '100px', border: '2px solid #FFD700', borderRadius: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', background: 'rgba(255,215,0,0.1)', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', width: '200%', height: '2px', background: '#FFD700', top: '20%', left: '-100%', animation: 'circuitFlow 2s infinite' }} />
-                    <div style={{ position: 'absolute', width: '2px', height: '200%', background: '#FFD700', left: '80%', top: '-100%', animation: 'circuitFlow 2.5s infinite' }} />
-                    💻
-                  </div>
-                  <p style={{ color: '#fff', marginTop: '15px', letterSpacing: '4px' }}>精密电路</p>
-                </div>
-
-                {/* 镶牙 */}
-                <div style={{ textAlign: 'center', opacity: interpolate(frame, 430, 20, 0, 1), transform: `translateY(${interpolate(frame, 430, 20, 50, 0)}px)` }}>
-                  <div style={{ width: '100px', height: '100px', border: '2px dashed #FFD700', borderRadius: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', background: 'rgba(255,215,0,0.1)' }}>🦷</div>
-                  <p style={{ color: '#fff', marginTop: '15px', letterSpacing: '4px' }}>医疗镶牙</p>
-                </div>
-              </div>
-            </div>
-
-            {/* ====== 第5幕：风吹草动，万物归宗 (18 - 24s) ====== */}
-            {frame > 540 && (
-              <div style={{ opacity: scene5Opacity, position: 'absolute', width: '100%', height: '100%', zIndex: 1 }}>
-                
-                {/* 动荡的背景风暴 (通过CSS噪点和径向渐变模拟) */}
-                <div style={{
-                  position: 'absolute', width: '100%', height: '100%',
-                  background: `radial-gradient(circle at center, transparent 20%, rgba(20, 0, 0, ${stormIntensity * 0.8}) 80%)`,
-                }} />
-                
-                {/* 汇聚的线条 (代表市场的资金和人群冲向黄金) */}
-                <svg width="1920" height="1080" style={{ position: 'absolute', top: 0, left: 0 }}>
-                  {[...Array(20)].map((_, i) => {
-                    const angle = (i / 20) * Math.PI * 2;
-                    // 从外围向中心汇聚
-                    const startX = 960 + Math.cos(angle) * 1200;
-                    const startY = 540 + Math.sin(angle) * 1200;
-                    return (
-                      <path key={i}
-                        d={`M ${startX} ${startY} Q ${960 + Math.cos(angle+0.5)*500} ${540 + Math.sin(angle+0.5)*500} 960 540`}
-                        fill="none" stroke="rgba(255,215,0,0.4)" strokeWidth="2"
-                        strokeDasharray="50 100"
-                        style={{ animation: 'circuitFlow 1s linear infinite' }}
-                      />
-                    );
-                  })}
+            {/* ====== Scene 1: 跨越万年的线 ====== */}
+            {introProgress > 0 && (
+              <div style={{ position: 'absolute', inset: 0, opacity: introProgress, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+                <svg width="800" height="200" style={{ overflow: 'visible' }}>
+                  <path d="M 0,100 Q 200,50 400,100 T 800,100" fill="none" stroke="#FFD700" strokeWidth="8" strokeDasharray="1000" strokeDashoffset={1000 * (1 - introProgress)} style={{ filter: 'drop-shadow(0 0 20px #FFD700)' }} />
+                  <circle cx="400" cy="100" r={20 * introProgress} fill="#fff" style={{ filter: 'drop-shadow(0 0 30px #FFF)' }} />
                 </svg>
+                <div style={{ fontSize: '40px', letterSpacing: '10px', marginTop: '40px', color: '#FFD700', opacity: easeOutExp(introProgress) }}>公元前2024 ━ 公元后2024</div>
+              </div>
+            )}
 
-                {/* 压迫感极强的核心文案 */}
-                <div style={{ position: 'absolute', bottom: '15%', left: '0', width: '100%', textAlign: 'center' }}>
-                  <h1 style={{ fontSize: '80px', color: '#FFF', margin: 0, letterSpacing: '15px', textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
-                    风吹草动 <span style={{ color: '#FFD700' }}>·</span> 避险本能
-                  </h1>
+            {/* ====== Scene 2: 21万吨的坍缩 (22米立方体) ====== */}
+            {scarcityProgress > 0 && (
+              <div style={{ position: 'absolute', inset: 0, opacity: scarcityProgress, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <div className="cube-container" style={{ transform: `scale(${easeOutExp(scarcityProgress) * 1.5})` }}>
+                  <div className="cube">
+                    <div className="face front"></div><div className="face back"></div>
+                    <div className="face right"></div><div className="face left"></div>
+                    <div className="face top"></div><div className="face bottom"></div>
+                  </div>
+                </div>
+                {/* 对比的小人 */}
+                <div style={{ position: 'absolute', bottom: '350px', left: '1050px', width: '10px', height: '30px', background: 'white', borderRadius: '5px', opacity: scarcityProgress, boxShadow: '0 0 10px white' }} />
+                <h1 style={{ position: 'absolute', top: '150px', fontSize: '80px', color: '#fff', margin: 0 }}>210,000 吨 <span style={{fontSize: '40px', color: '#888'}}>全人类的总和</span></h1>
+                <h2 style={{ position: 'absolute', bottom: '200px', fontSize: '60px', color: '#FFD700', letterSpacing: '5px' }}>22m × 22m × 22m</h2>
+              </div>
+            )}
+
+            {/* ====== Scene 3: 南非霸主 ====== */}
+            {supplyProgress > 0 && (
+              <div style={{ position: 'absolute', inset: 0, opacity: supplyProgress }}>
+                {/* 抽象柱状图山峰 */}
+                <div style={{ position: 'absolute', bottom: 100, left: 0, right: 0, height: '600px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '20px' }}>
+                  {[40, 60, 30, 100, 50, 45].map((h, i) => (
+                    <div key={i} style={{ 
+                      width: '100px', height: `${h === 100 ? supplyProgress * 100 : supplyProgress * h}%`, 
+                      background: h === 100 ? 'linear-gradient(to top, #B8860B, #FFD700, #FFF)' : '#222',
+                      boxShadow: h === 100 ? '0 0 50px rgba(255,215,0,0.5)' : 'none',
+                      transition: 'height 0.5s ease-out', position: 'relative'
+                    }}>
+                      {h === 100 && <div style={{position: 'absolute', top: '-60px', left: '-50px', width: '200px', textAlign: 'center', fontSize: '40px', color: '#FFD700', fontWeight: 'bold'}}>南非</div>}
+                    </div>
+                  ))}
+                </div>
+                <h1 style={{ position: 'absolute', top: '150px', width: '100%', textAlign: 'center', fontSize: '70px', color: '#fff', letterSpacing: '10px' }}>史上开采之王</h1>
+              </div>
+            )}
+
+            {/* ====== Scene 4: 交易枢纽 (伦敦、纽约、上海) ====== */}
+            {tradingProgress > 0 && (
+              <div style={{ position: 'absolute', inset: 0, opacity: tradingProgress }}>
+                <svg width="1920" height="1080" style={{ position: 'absolute', zIndex: 1 }}>
+                  {/* 连接线 */}
+                  <polygon points="560,600 960,300 1360,600" fill="none" stroke="rgba(255,215,0,0.3)" strokeWidth="4" strokeDasharray="20 20" style={{ animation: 'draw-line 2s linear infinite' }} />
+                </svg>
+                {/* 三大枢纽点 */}
+                {[{name: 'LONDON', x: 560, y: 600, label: '柜台(OTC)中心'}, {name: 'NEW YORK', x: 960, y: 300, label: '期货与金库'}, {name: 'SHANGHAI', x: 1360, y: 600, label: '实体与期货枢纽'}].map((city, i) => (
+                  <div key={i} style={{ position: 'absolute', left: city.x - 150, top: city.y - 150, width: '300px', height: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '40px', height: '40px', background: '#FFD700', borderRadius: '50%', animation: 'pulse-ring 2s infinite' }} />
+                    <h2 style={{ color: '#fff', fontSize: '30px', margin: '20px 0 5px 0', letterSpacing: '3px' }}>{city.name}</h2>
+                    <p style={{ color: '#aaa', fontSize: '18px', margin: 0 }}>{city.label}</p>
+                  </div>
+                ))}
+                <h1 style={{ position: 'absolute', bottom: '150px', width: '100%', textAlign: 'center', fontSize: '60px', color: '#FFD700' }}>全球三大流转中心</h1>
+              </div>
+            )}
+
+            {/* ====== Scene 5: 爱、投机与噪音 ====== */}
+            {noiseProgress > 0 && (
+              <div style={{ position: 'absolute', inset: 0, opacity: noiseProgress, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <h1 style={{ fontSize: '70px', marginBottom: '100px', display: 'flex', gap: '40px' }}>
+                  <span style={{ color: '#fff' }}>抗通胀本质</span>
+                  <span style={{ color: '#FF3366', textShadow: '0 0 30px rgba(255,51,102,0.8)' }}>VS 投机噪音</span>
+                </h1>
+                <svg width="1400" height="400" style={{ overflow: 'visible' }}>
+                  {/* 平稳的价值线 */}
+                  <path d="M0,200 L1400,200" stroke="rgba(255,255,255,0.3)" strokeWidth="4" strokeDasharray="10 10" />
+                  {/* 疯狂波动的价格线 (动态修改 SVG path) */}
+                  <path d="M 0,200 Q 100,50 200,200 T 400,200 T 600,200 T 800,200 T 1000,200 T 1200,200 T 1400,200" 
+                        fill="none" stroke="#FFD700" strokeWidth="8" 
+                        style={{ filter: 'drop-shadow(0 0 15px #FFD700)', animation: 'noise-wave 0.5s infinite linear' }} />
+                </svg>
+                <div style={{ position: 'absolute', bottom: '200px', fontSize: '40px', color: '#FF3366', fontWeight: 'bold', letterSpacing: '8px' }}>
+                  PURE LOVE & SPECULATION
                 </div>
               </div>
             )}
-            
-            {/* 进度条指示器 */}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, height: '4px', background: 'rgba(255,255,255,0.2)', width: '100%' }}>
-              <div style={{ height: '100%', background: '#FFD700', width: `${(frame / totalFrames) * 100}%` }} />
+
+            {/* ====== Scene 6: 最后的戒律 ====== */}
+            {rulesProgress > 0 && (
+              <div style={{ position: 'absolute', inset: 0, opacity: rulesProgress, padding: '100px 150px' }}>
+                <h1 style={{ fontSize: '70px', color: '#FFD700', borderBottom: '4px solid #FFD700', paddingBottom: '20px', display: 'inline-block' }}>交易精髓与戒律</h1>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '50px', marginTop: '60px' }}>
+                  {['极高波动率：做好心理准备', '超长周期：保值需站在10年以上维度', '隐性成本：实体金交易磨损达5-20%', '仓位控制：切勿孤注一掷', '大道至简：少信短线技术分析'].map((rule, i) => (
+                    <div key={i} style={{ 
+                      background: 'rgba(255,215,0,0.05)', borderLeft: '8px solid #FFD700', padding: '40px', 
+                      fontSize: '35px', color: '#fff', transform: `translateX(${rulesProgress * 0 === 0 ? 0 : 100}px)`,
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                    }}>
+                      <span style={{ color: '#FFD700', fontWeight: 'bold', marginRight: '20px' }}>0{i+1}</span>
+                      {rule}
+                    </div>
+                  ))}
+                </div>
+                <h2 style={{ position: 'absolute', bottom: '80px', right: '150px', fontSize: '50px', color: '#fff', letterSpacing: '5px' }}>
+                  FOLLOW YOUR <span style={{ color: '#FFD700' }}>HEART</span>
+                </h2>
+              </div>
+            )}
+
+            {/* 底部进度条 */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, height: '4px', background: 'rgba(255,255,255,0.1)', width: '100%' }}>
+              <div style={{ height: '100%', background: '#FFD700', width: `${(frame / TOTAL_FRAMES) * 100}%` }} />
             </div>
 
           </div>
@@ -262,7 +208,7 @@
     }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<GoldEpicVisuals />);
+    root.render(<MasterpieceVisuals />);
   </script>
 </body>
 </html>
