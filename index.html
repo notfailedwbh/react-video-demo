@@ -3,41 +3,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的 React 视频演示</title>
+  <title>黄金交易法则演示</title>
   
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 
   <style>
-    body { font-family: sans-serif; background-color: #f5f5f7; padding: 20px; margin: 0; }
-    .container { max-width: 800px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    video { width: 100%; border-radius: 8px; margin-top: 16px; background: #000; }
+    body { margin: 0; padding: 20px; background-color: #f5f5f7; display: flex; justify-content: center; font-family: sans-serif; }
+    .demo-container { max-width: 900px; width: 100%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    /* 模拟视频播放器的容器 */
+    .video-canvas { 
+      position: relative; 
+      width: 100%; 
+      aspect-ratio: 16 / 9; /* 强制 16:9 比例 */
+      background-color: #111; 
+      color: #ffd700; 
+      overflow: hidden; 
+      border-radius: 8px;
+    }
+
+    /* 绝对居中布局 */
+    .absolute-fill { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+    /* CSS 动画替代 Remotion 的 spring 和 interpolate */
+    @keyframes springScale {
+      0% { transform: scale(0.5); opacity: 0; }
+      60% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .scene-1 h1 { animation: springScale 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; font-size: 5vw; text-shadow: 0 0 30px rgba(255, 215, 0, 0.6); margin: 0; }
+    .scene-2 { animation: fadeIn 1s ease-out forwards; font-size: 2.5vw; text-align: center; line-height: 1.5; }
+    .scene-3 { animation: fadeIn 1s ease-out forwards; }
+    .scene-3-box { font-size: 2vw; text-align: center; line-height: 1.8; background-color: rgba(255,215,0,0.1); padding: 4vw; border-radius: 20px; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    function VideoPlayer() {
-      // 这是一个简单的 React 组件
+    const { useState, useEffect } = React;
+
+    function GoldVideoSimulation() {
+      // 使用状态来模拟时间轴（0到10秒，模拟300帧）
+      const [timeElapsed, setTimeElapsed] = useState(0);
+
+      useEffect(() => {
+        // 每 100 毫秒更新一次进度，总长 10 秒后循环播放
+        const timer = setInterval(() => {
+          setTimeElapsed(prev => (prev >= 10 ? 0 : prev + 0.1));
+        }, 100);
+        return () => clearInterval(timer);
+      }, []);
+
+      // 场景时间轴映射 (假设 30fps，300帧 = 10秒)
+      // 第一幕: 0-90帧 (0 - 3秒)
+      // 第二幕: 90-180帧 (3 - 6秒)
+      // 第三幕: 180-300帧 (6 - 10秒)
+      const isScene1 = timeElapsed < 3;
+      const isScene2 = timeElapsed >= 3 && timeElapsed < 6;
+      const isScene3 = timeElapsed >= 6;
+
       return (
-        <div className="container">
-          <h2>交互演示原型</h2>
-          <p>这是一个直接在 GitHub 上托管的免编译 React 组件。</p>
-          
-          <video controls>
-            {/* 你可以在这里替换成你的视频 URL */}
-            <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
-            您的浏览器不支持视频播放。
-          </video>
+        <div className="demo-container">
+          <h2>交易策略演示 (纯浏览器端渲染)</h2>
+          <div className="video-canvas">
+            
+            {/* 第一幕 */}
+            {isScene1 && (
+              <div className="absolute-fill scene-1">
+                <h1>黄金交易核心法则</h1>
+              </div>
+            )}
+
+            {/* 第二幕 */}
+            {isScene2 && (
+              <div className="absolute-fill scene-2">
+                <p>作为传统的避险资产</p>
+                <p style={{ color: '#fff' }}>黄金在经济波动中具有不可替代的作用</p>
+              </div>
+            )}
+
+            {/* 第三幕 */}
+            {isScene3 && (
+              <div className="absolute-fill scene-3">
+                <div className="scene-3-box">
+                  <h2 style={{ marginBottom: '20px', borderBottom: '2px solid #ffd700', paddingBottom: '10px', marginTop: 0 }}>
+                    技术分析要领
+                  </h2>
+                  <p style={{ color: '#eee', margin: '10px 0' }}>在进行分析时，必须严格匹配交易目标与信号级别。</p>
+                  <p style={{ color: '#eee', margin: '10px 0' }}>如做日线波段必须看 1 小时以上级别 K 线收盘，</p>
+                  <p style={{ color: '#ff6b6b', fontWeight: 'bold', marginTop: '20px' }}>坚决忽略分钟级噪音干扰。</p>
+                </div>
+              </div>
+            )}
+
+          </div>
+          <p style={{textAlign: 'center', color: '#666'}}>当前进度: {Math.floor(timeElapsed)} 秒 / 10 秒 (循环播放)</p>
         </div>
       );
     }
 
-    // 将组件渲染到页面上
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<VideoPlayer />);
+    root.render(<GoldVideoSimulation />);
   </script>
 </body>
 </html>
