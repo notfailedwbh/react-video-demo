@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的 React 视频演示</title>
+  
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <style>
+    body { font-family: sans-serif; background-color: #f5f5f7; padding: 20px; margin: 0; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    video { width: 100%; border-radius: 8px; margin-top: 16px; background: #000; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    function VideoPlayer() {
+      // 这是一个简单的 React 组件
+      return (
+        <div className="container">
+          <h2>交互演示原型</h2>
+          <p>这是一个直接在 GitHub 上托管的免编译 React 组件。</p>
+          
+          <video controls>
+            {/* 你可以在这里替换成你的视频 URL */}
+            <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
+            您的浏览器不支持视频播放。
+          </video>
+        </div>
+      );
+    }
+
+    // 将组件渲染到页面上
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<VideoPlayer />);
+  </script>
+</body>
+</html>
